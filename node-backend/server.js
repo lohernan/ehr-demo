@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const mysql = require("mysql2");
 const path = require("path");
+const db = require("./config/db");
 
 const app = express();
 const PORT = 3000;
@@ -16,6 +17,9 @@ app.use(express.static(path.join(__dirname, "../frontend")));
 //
 // ------------------- API ROUTES -------------------
 //
+
+const userController = require("./controllers/userController");
+
 app.post("/api/login", (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) {
@@ -35,12 +39,14 @@ app.post("/api/login", (req, res) => {
 
     const user = results[0];
 
+const role = user.role.toLowerCase();
+
 // Decide redirect based on role
 let redirect = "/frontend/index.html"; // default fallback
-if (user.role === "doctor") redirect = "/frontend/doctor.html";
-else if (user.role === "nurse") redirect = "/frontend/nurse.html";
-else if (user.role === "pharmacist") redirect = "/frontend/pharmacist.html";
-else if (user.role === "patient") redirect = "/frontend/patient.html";
+if (role === "doctor") redirect = "/frontend/doctor.html";
+else if (role === "nurse") redirect = "/frontend/nurse.html";
+else if (role === "pharmacist") redirect = "/frontend/pharmacist.html";
+else if (role === "patient") redirect = "/frontend/patient.html";
 
 res.json({ ok: true, redirect, user });
 
