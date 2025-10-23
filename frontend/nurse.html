@@ -1,0 +1,47 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Nurse - EHR Demo</title><link rel="stylesheet" href="css/style.css"></head>
+<body>
+<div class="container">
+  <h2>Nurse Dashboard</h2>
+  <button id="load">Load patients</button>
+  <div id="patients"></div>
+
+  <h3>Record Vitals</h3>
+  <select id="patientSelect"></select><br/>
+  <input id="bp" placeholder="BP e.g. 120/80"/><br/>
+  <input id="hr" placeholder="Heart rate"/><br/>
+  <input id="temp" placeholder="Temperature"/><br/>
+  <textarea id="notes" placeholder="Notes"></textarea><br/>
+  <button id="saveVitals">Save Vitals</button>
+  <p id="vmsg"></p>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+  async function loadPatients(){
+    const list = await listPatients();
+    const sel = document.getElementById('patientSelect');
+    sel.innerHTML = '';
+    list.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.text = p.first_name + ' ' + p.last_name;
+      sel.appendChild(opt);
+    });
+  }
+  document.getElementById('load').addEventListener('click', loadPatients);
+  document.getElementById('saveVitals').addEventListener('click', async ()=>{
+    const patient_id = parseInt(document.getElementById('patientSelect').value);
+    const bp = document.getElementById('bp').value;
+    const heart_rate = parseInt(document.getElementById('hr').value || 0);
+    const temperature = parseFloat(document.getElementById('temp').value || 0);
+    const notes = document.getElementById('notes').value;
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const res = await addVitals(patient_id, { recorded_by: user.id || 2, bp, heart_rate, temperature, notes });
+    document.getElementById('vmsg').innerText = res.ok ? 'Vitals saved' : 'Error';
+  });
+  loadPatients();
+</script>
+</body>
+</html>

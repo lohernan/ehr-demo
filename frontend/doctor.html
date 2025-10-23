@@ -1,0 +1,49 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Doctor - EHR Demo</title><link rel="stylesheet" href="css/style.css"></head>
+<body>
+<div class="container">
+  <h2>Doctor Dashboard</h2>
+  <div>
+    <button id="refresh">Load patients</button>
+    <div id="patients"></div>
+  </div>
+
+  <h3>Prescribe medication</h3>
+  <div>
+    <select id="patientSelect"></select><br/>
+    <input id="drug" placeholder="Drug name"/><br/>
+    <input id="dosage" placeholder="Dosage (e.g. 500mg)" /><br/>
+    <button id="prescribeBtn">Submit Prescription</button>
+    <p id="presMsg"></p>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+  async function loadPatients(){
+    const list = await listPatients();
+    const sel = document.getElementById('patientSelect');
+    sel.innerHTML = '';
+    list.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.text = p.first_name + ' ' + p.last_name;
+      sel.appendChild(opt);
+    });
+  }
+  document.getElementById('refresh').addEventListener('click', loadPatients);
+  document.getElementById('prescribeBtn').addEventListener('click', async ()=>{
+    const patient_id = parseInt(document.getElementById('patientSelect').value);
+    const drug = document.getElementById('drug').value;
+    const dosage = document.getElementById('dosage').value;
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const res = await createPrescription({ patient_id, prescribed_by: user.id || 1, drug_name: drug, dosage });
+    document.getElementById('presMsg').innerText = res.ok ? 'Prescription created' : 'Error';
+  });
+
+  // auto-load
+  loadPatients();
+</script>
+</body>
+</html>

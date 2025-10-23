@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Pharmacist - EHR Demo</title><link rel="stylesheet" href="css/style.css"></head>
+<body>
+<div class="container">
+  <h2>Pharmacist Dashboard</h2>
+  <button id="load">Load pending prescriptions</button>
+  <div id="pending"></div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+  async function loadPending(){
+    const list = await pendingPrescriptions();
+    const div = document.getElementById('pending');
+    div.innerHTML = '';
+    list.forEach(p => {
+      const row = document.createElement('div');
+      row.innerHTML = `<strong>${p.first_name} ${p.last_name}</strong> - ${p.drug_name} (${p.dosage})
+        <button data-id="${p.id}">Mark Dispensed</button>`;
+      div.appendChild(row);
+    });
+    div.querySelectorAll('button').forEach(btn=>{
+      btn.addEventListener('click', async ()=> {
+        const id = btn.getAttribute('data-id');
+        await dispensePrescription(id);
+        loadPending();
+      });
+    });
+  }
+  document.getElementById('load').addEventListener('click', loadPending);
+  loadPending();
+</script>
+</body>
+</html>
