@@ -42,11 +42,11 @@ app.post("/api/login", (req, res) => {
 const role = user.role.toLowerCase();
 
 // Decide redirect based on role
-let redirect = "/frontend/index.html"; // default fallback
-if (role === "doctor") redirect = "/frontend/doctor.html";
-else if (role === "nurse") redirect = "/frontend/nurse.html";
-else if (role === "pharmacist") redirect = "/frontend/pharmacist.html";
-else if (role === "patient") redirect = "/frontend/patient.html";
+let redirect = "/index.html"; // default fallback
+if (role === "doctor") redirect = "/doctor.html";
+else if (role === "nurse") redirect = "/nurse.html";
+else if (role === "pharmacist") redirect ="/pharmacist.html";
+else if (role === "patient") redirect = "/patient.html";
 
 res.json({ ok: true, redirect, user });
 
