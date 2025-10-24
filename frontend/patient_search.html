@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Patient Search</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background-color: #f8f8f8;
+    }
+
+    .container {
+      display: flex;
+      padding: 20px;
+      gap: 20px;
+    }
+
+    .search-panel {
+      background-color: #fff;
+      padding: 20px;
+      border: 1px solid #ccc;
+      width: 300px;
+    }
+
+    label {
+      display: block;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    input[type="text"],
+    input[type="date"] {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      box-sizing: border-box;
+    }
+
+    button {
+      margin-top: 15px;
+      padding: 10px 15px;
+      width: 100%;
+      background-color: #007bff;
+      border: none;
+      color: white;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .results {
+      flex: 1;
+      background-color: #fff;
+      padding: 20px;
+      border: 1px solid #ccc;
+      overflow-y: auto;
+      max-height: 80vh;
+    }
+
+    .result-item {
+      border-bottom: 1px solid #eee;
+      padding: 10px 0;
+    }
+
+    .result-item:last-child {
+      border-bottom: none;
+    }
+
+    .loading {
+      color: #555;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+
+  <h2 style="padding:20px;">Patient Search</h2>
+
+  <div class="container">
+    <div class="search-panel">
+      <form id="searchForm">
+        <label>Last Name</label>
+        <input type="text" name="last_name">
+
+        <label>First Name</label>
+        <input type="text" name="first_name">
+
+        <label>Date Of Birth</label>
+        <input type="date" name="dob">
+
+        <label>Phone Number</label>
+        <input type="text" name="phone">
+
+        <button type="submit">Search</button>
+      </form>
+    </div>
+
+    <div class="results" id="results">
+      <h3>Results</h3>
+      <p>Enter search details and click <strong>Search</strong> to see results here.</p>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('searchForm');
+    const resultsDiv = document.getElementById('results');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      resultsDiv.innerHTML = "<p class='loading'>Searching...</p>";
+
+      const formData = new FormData(form);
+      const params = new URLSearchParams(formData);
+
+      try {
+        const response = await fetch('http://localhost:3000/search?' + params.toString());
+        const html = await response.text();
+        resultsDiv.innerHTML = "<h3>Results</h3>" + html;
+      } catch (error) {
+        resultsDiv.innerHTML = "<p style='color:red;'>Error fetching results.</p>";
+      }
+    });
+  </script>
+</body>
+</html>

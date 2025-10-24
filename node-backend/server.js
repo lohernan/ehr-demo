@@ -119,6 +119,61 @@ app.patch("/api/prescriptions/:id/dispense", (req, res) => {
   });
 });
 
+// -------------------- PATIENT SEARCH --------------------
+app.get("/search", (req, res) => {
+  const { last_name, first_name, dob, phone } = req.query;
+
+  let sql = "SELECT * FROM patients WHERE 1=1";
+  const params = [];
+
+  if (last_name) {
+    sql += " AND last_name LIKE ?";
+    params.push(`%${last_name}%`);
+  }
+  if (first_name) {
+    sql += " AND first_name LIKE ?";
+    params.push(`%${first_name}%`);
+  }
+  if (dob) {
+    sql += " AND dob = ?";
+    params.push(dob);
+  }
+  if (phone) {
+    sql += " AND phone LIKE ?";
+    params.push(`%${phone}%`);
+  }
+
+  db.query(sql, params, (err, results) => {
+    if (err) {
+      console.error("❌ Search error:", err);
+      return res.status(500).send("<p style='color:red;'>Server error while searching.</p>");
+    }
+
+    if (results.length === 0) {
+      return res.send("<p>No matching patients found.</p>");
+    }
+
+    const html = results
+      .map((row) => {
+        // Format DOB to YYYY-MM-DD
+        const dobFormatted = row.dob ? row.dob.toISOString().split("T")[0] : "";
+
+        return `
+          <div class="result-item">
+            <button onclick="alert('Selected: ${row.first_name} ${row.last_name}')">
+              ${row.first_name} ${row.last_name}
+            </button><br>
+            DOB: ${dobFormatted}<br>
+            Phone: ${row.phone}
+          </div>
+        `;
+      })
+      .join("");
+
+    res.send(html);
+  });
+});
+
 app.use((req, res) => {
   res.sendFile(path.join(__dirname, "../frontend/index.html"));
 });
