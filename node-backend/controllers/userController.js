@@ -32,7 +32,7 @@ exports.loginUser = (req, res) => {
 
     // Determine redirect page based on role
     let redirect = "/dashboard.html";
-    if (role === "doctor") redirect = "/doctor.html";
+    if (role === "doctor") redirect = "/patient_search.html";
     else if (role === "nurse") redirect = "/nurse.html";
     else if (role === "pharmacist") redirect = "/pharmacist.html";
     else if (role === "patient") redirect = "/patient.html";

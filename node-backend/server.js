@@ -43,7 +43,7 @@ const role = user.role.toLowerCase();
 
 // Decide redirect based on role
 let redirect = "/index.html"; // default fallback
-if (role === "doctor") redirect = "/doctor.html";
+if (role === "doctor") redirect = "/patient_search.html";
 else if (role === "nurse") redirect = "/nurse.html";
 else if (role === "pharmacist") redirect ="/pharmacist.html";
 else if (role === "patient") redirect = "/patient.html";
@@ -159,13 +159,13 @@ app.get("/search", (req, res) => {
         const dobFormatted = row.dob ? row.dob.toISOString().split("T")[0] : "";
 
         return `
-          <div class="result-item">
-            <button onclick="alert('Selected: ${row.first_name} ${row.last_name}')">
-              ${row.first_name} ${row.last_name}
-            </button><br>
-            DOB: ${dobFormatted}<br>
-            Phone: ${row.phone}
-          </div>
+           <div class="result-item">
+        <button onclick="window.location.href='/doctor.html?patientId=${row.id}&patientName=${encodeURIComponent(row.first_name + ' ' + row.last_name)}'">
+          ${row.first_name} ${row.last_name}
+        </button><br>
+        DOB: ${dobFormatted}<br>
+        Phone: ${row.phone}
+      </div>
         `;
       })
       .join("");

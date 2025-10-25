@@ -71,6 +71,29 @@
     document.getElementById('presMsg').innerText = res.ok ? 'Prescription created' : 'Error';
   });
 
+  function getQueryParams() {
+  return Object.fromEntries(new URLSearchParams(window.location.search));
+}
+
+async function selectPatientFromQuery() {
+  const params = getQueryParams();
+  if (!params.patientId) return;
+
+  const sel = document.getElementById('patientSelect');
+  await loadPatients(); // load all patients first
+
+  const option = Array.from(sel.options).find(o => o.value === params.patientId);
+  if (option) sel.value = params.patientId;
+  if (params.patientName) {
+    // Optionally show patient name somewhere
+    document.getElementById('presMsg').innerText = `Prescribing for ${params.patientName}`;
+  }
+}
+
+// Call this after loadPatients
+  selectPatientFromQuery();
+
+
   // auto-load
   loadPatients();
 </script>
