@@ -17,24 +17,7 @@
   </div>
 
   <script src="js/app.js"></script>
-<script>
-  document.getElementById("loginBtn").addEventListener("click", async () => {
-    const username = document.getElementById("username").value;
-    const password = document.getElementById("password").value;
-    const res = await login(username, password);
-    if (res.ok) {
-      localStorage.setItem("user", JSON.stringify(res.user));
-      const role = res.user.role;
-      if (role === "DOCTOR") location.href = "/patient_search.html";
-      else if (role === "NURSE") location.href = "/nurse.html";
-      else if (role === "PHARMACIST") location.href = "/pharmacist.html";
-      else if (role === "PATIENT") location.href = "/patient.html";
-      else alert("Unknown role");
-    } else {
-      document.getElementById("msg").innerText = res.message || "Login failed";
-    }
-  });
-</script>
+
 
 </body>
 </html>
