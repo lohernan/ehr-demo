@@ -1,9 +1,43 @@
 <!doctype html>
 <html>
-<head><meta charset="utf-8"><title>Doctor - EHR Demo</title><link rel="stylesheet" href="css/style.css"></head>
+<head>
+  <meta charset="utf-8">
+  <title>Doctor - EHR Demo</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* Simple dropdown for account settings */
+    .dropdown {
+      position: relative;
+      display: inline-block;
+    }
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      right: 0;
+      background-color: #f9f9f9;
+      min-width: 160px;
+      box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+      z-index: 1;
+    }
+    .dropdown-content button {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      background: none;
+      text-align: left;
+      cursor: pointer;
+    }
+    .dropdown-content button:hover {
+      background-color: #f1f1f1;
+    }
+    .dropdown.show .dropdown-content {
+      display: block;
+    }
+  </style>
+</head>
 <body>
 
-      <div class="top-bar">
+  <div class="top-bar">
     <button class="icon-button" title="Settings" aria-label="Settings">
       <!-- Gear icon -->
       <svg viewBox="0 0 24 24">
@@ -22,80 +56,101 @@
       </svg>
     </button>
 
-    <button class="icon-button" title="Profile" aria-label="Profile">
-      <!-- User icon -->
-      <svg viewBox="0 0 24 24">
-        <circle cx="12" cy="7" r="4"></circle>
-        <path d="M5.5 21a7.5 7.5 0 0 1 13 0"></path>
-      </svg>
-    </button>
-  </div>
-  
-<div class="container">
-  <h2>Doctor Dashboard</h2>
-  <div>
-    <button id="refresh">Load patients</button>
-    <div id="patients"></div>
+    <div class="dropdown">
+      <button class="icon-button" id="profileBtn" title="Profile" aria-label="Profile">
+        <!-- User icon -->
+        <svg viewBox="0 0 24 24">
+          <circle cx="12" cy="7" r="4"></circle>
+          <path d="M5.5 21a7.5 7.5 0 0 1 13 0"></path>
+        </svg>
+      </button>
+      <div class="dropdown-content" id="accountDropdown">
+        <button id="signOutBtn">Sign Out</button>
+      </div>
+    </div>
   </div>
 
-  <h3>Prescribe medication</h3>
-  <div>
-    <select id="patientSelect"></select><br/>
-    <input id="drug" placeholder="Drug name"/><br/>
-    <input id="dosage" placeholder="Dosage (e.g. 500mg)" /><br/>
-    <button id="prescribeBtn">Submit Prescription</button>
-    <p id="presMsg"></p>
-  </div>
-</div>
+  <div class="container">
+    <h2>Doctor Dashboard</h2>
+    <div>
+      <button id="refresh">Load patients</button>
+      <div id="patients"></div>
+    </div>
 
-<script src="js/app.js"></script>
-<script>
-  async function loadPatients(){
-    const list = await listPatients();
-    const sel = document.getElementById('patientSelect');
-    sel.innerHTML = '';
-    list.forEach(p => {
-      const opt = document.createElement('option');
-      opt.value = p.id;
-      opt.text = p.first_name + ' ' + p.last_name;
-      sel.appendChild(opt);
+    <h3>Prescribe medication</h3>
+    <div>
+      <select id="patientSelect"></select><br/>
+      <input id="drug" placeholder="Drug name"/><br/>
+      <input id="dosage" placeholder="Dosage (e.g. 500mg)" /><br/>
+      <button id="prescribeBtn">Submit Prescription</button>
+      <p id="presMsg"></p>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>
+    // Dropdown toggle
+    const profileBtn = document.getElementById('profileBtn');
+    const accountDropdown = document.getElementById('accountDropdown');
+    profileBtn.addEventListener('click', () => {
+      accountDropdown.parentElement.classList.toggle('show');
     });
-  }
-  document.getElementById('refresh').addEventListener('click', loadPatients);
-  document.getElementById('prescribeBtn').addEventListener('click', async ()=>{
-    const patient_id = parseInt(document.getElementById('patientSelect').value);
-    const drug = document.getElementById('drug').value;
-    const dosage = document.getElementById('dosage').value;
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    const res = await createPrescription({ patient_id, prescribed_by: user.id || 1, drug_name: drug, dosage });
-    document.getElementById('presMsg').innerText = res.ok ? 'Prescription created' : 'Error';
-  });
+    // Close dropdown if clicking outside
+    window.addEventListener('click', (e) => {
+      if (!profileBtn.contains(e.target) && !accountDropdown.contains(e.target)) {
+        accountDropdown.parentElement.classList.remove('show');
+      }
+    });
 
-  function getQueryParams() {
-  return Object.fromEntries(new URLSearchParams(window.location.search));
-}
+    // Sign out button
+    document.getElementById('signOutBtn').addEventListener('click', () => {
+      localStorage.removeItem('user');
+      window.location.href = '/index.html';
+    });
 
-async function selectPatientFromQuery() {
-  const params = getQueryParams();
-  if (!params.patientId) return;
+    // Patient loading
+    async function loadPatients(){
+      const list = await listPatients();
+      const sel = document.getElementById('patientSelect');
+      sel.innerHTML = '';
+      list.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.text = p.first_name + ' ' + p.last_name;
+        sel.appendChild(opt);
+      });
+    }
+    document.getElementById('refresh').addEventListener('click', loadPatients);
 
-  const sel = document.getElementById('patientSelect');
-  await loadPatients(); // load all patients first
+    // Prescribe button
+    document.getElementById('prescribeBtn').addEventListener('click', async ()=>{
+      const patient_id = parseInt(document.getElementById('patientSelect').value);
+      const drug = document.getElementById('drug').value;
+      const dosage = document.getElementById('dosage').value;
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const res = await createPrescription({ patient_id, prescribed_by: user.id || 1, drug_name: drug, dosage });
+      document.getElementById('presMsg').innerText = res.ok ? 'Prescription created' : 'Error';
+    });
 
-  const option = Array.from(sel.options).find(o => o.value === params.patientId);
-  if (option) sel.value = params.patientId;
-  if (params.patientName) {
-    // Optionally show patient name somewhere
-    document.getElementById('presMsg').innerText = `Prescribing for ${params.patientName}`;
-  }
-}
+    function getQueryParams() {
+      return Object.fromEntries(new URLSearchParams(window.location.search));
+    }
 
-// Call this after loadPatients
-  selectPatientFromQuery();
+    async function selectPatientFromQuery() {
+      const params = getQueryParams();
+      if (!params.patientId) return;
+      const sel = document.getElementById('patientSelect');
+      await loadPatients(); // load all patients first
+      const option = Array.from(sel.options).find(o => o.value === params.patientId);
+      if (option) sel.value = params.patientId;
+      if (params.patientName) {
+        document.getElementById('presMsg').innerText = `Prescribing for ${params.patientName}`;
+      }
+    }
 
-
-  // auto-load
-  loadPatients();
-</script>
+    // Auto-load
+    loadPatients();
+    selectPatientFromQuery();
+  </script>
 </body>
 </html>

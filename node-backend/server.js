@@ -1,68 +1,66 @@
+// server.js
 const express = require("express");
 const cors = require("cors");
-const mysql = require("mysql2");
 const path = require("path");
 const db = require("./config/db");
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
-// Middleware
+// ------------------- MIDDLEWARE -------------------
 app.use(cors());
 app.use(express.json());
+app.use(express.static(path.join(__dirname, "../frontend"))); // Serve static frontend files
 
-// Serve your frontend folder
-app.use(express.static(path.join(__dirname, "../frontend")));
+// ------------------- CONTROLLERS -------------------
+const userController = {
+  loginUser: (req, res) => {
+    const { username, password } = req.body;
 
-//
+    if (!username || !password) {
+      return res.json({ ok: false, message: "Username and password required" });
+    }
+
+    db.query(
+      "SELECT * FROM users WHERE username=? AND password=?",
+      [username, password],
+      (err, results) => {
+        if (err) return res.status(500).json({ ok: false, message: "Server error" });
+
+        if (results.length === 0) {
+          return res.json({ ok: false, message: "Invalid credentials" });
+        }
+
+        const user = results[0];
+        const role = user.role.toLowerCase();
+
+        // Decide redirect page based on role
+        let redirect = "/index.html";
+        if (role === "doctor") redirect = "/doctor.html";
+        else if (role === "nurse") redirect = "/nurse.html";
+        else if (role === "pharmacist") redirect = "/pharmacist.html";
+        else if (role === "patient") redirect = "/patient.html";
+
+        res.json({ ok: true, redirect, user });
+      }
+    );
+  },
+};
+
 // ------------------- API ROUTES -------------------
-//
 
-const userController = require("./controllers/userController");
-
-app.post("/api/login", (req, res) => {
-  const { username, password } = req.body;
-  if (!username || !password) {
-    return res.status(400).json({ ok: false, message: "Username and password required" });
-  }
-
-  const sql = "SELECT * FROM users WHERE username = ? AND password = ?";
-  db.query(sql, [username, password], (err, results) => {
-    if (err) {
-      console.error("❌ DB error:", err);
-      return res.status(500).json({ ok: false, message: "Server error" });
-    }
-
-    if (results.length === 0) {
-      return res.status(401).json({ ok: false, message: "Invalid credentials" });
-    }
-
-    const user = results[0];
-
-const role = user.role.toLowerCase();
-
-// Decide redirect based on role
-let redirect = "/index.html"; // default fallback
-if (role === "doctor") redirect = "/patient_search.html";
-else if (role === "nurse") redirect = "/nurse.html";
-else if (role === "pharmacist") redirect ="/pharmacist.html";
-else if (role === "patient") redirect = "/patient.html";
-
-res.json({ ok: true, redirect, user });
-
-  });
-});
-
+// Login
+app.post("/api/login", userController.loginUser);
 
 // Get all patients
 app.get("/api/patients", (req, res) => {
   db.query("SELECT * FROM patients", (err, results) => {
-    if (err) return res.status(500).json({ error: err });
+    if (err) return res.status(500).json({ ok: false, error: err });
     res.json(results);
   });
 });
 
-// Add a prescription (Doctor)
+// Add prescription
 app.post("/api/prescriptions", (req, res) => {
   const { patient_id, prescribed_by, drug_name, dosage } = req.body;
   const sql =
@@ -73,7 +71,7 @@ app.post("/api/prescriptions", (req, res) => {
   });
 });
 
-// Add vitals (Nurse)
+// Add vitals
 app.post("/api/vitals", (req, res) => {
   const { patient_id, recorded_by, bp, heart_rate, temperature, notes } = req.body;
   const sql =
@@ -84,7 +82,7 @@ app.post("/api/vitals", (req, res) => {
   });
 });
 
-// Get patient history (for Patient)
+// Get patient history
 app.get("/api/patient/:id/history", (req, res) => {
   const id = req.params.id;
   const history = {};
@@ -99,7 +97,7 @@ app.get("/api/patient/:id/history", (req, res) => {
   });
 });
 
-// Get pending prescriptions (for Pharmacist)
+// Get pending prescriptions
 app.get("/api/prescriptions/pending", (req, res) => {
   db.query(
     "SELECT p.id, p.drug_name, p.dosage, pat.first_name, pat.last_name FROM prescriptions p JOIN patients pat ON p.patient_id=pat.id WHERE p.status='PENDING'",
@@ -110,7 +108,7 @@ app.get("/api/prescriptions/pending", (req, res) => {
   );
 });
 
-// Mark prescription as dispensed (Pharmacist)
+// Dispense prescription
 app.patch("/api/prescriptions/:id/dispense", (req, res) => {
   const id = req.params.id;
   db.query("UPDATE prescriptions SET status='DISPENSED' WHERE id=?", [id], (err) => {
@@ -119,7 +117,7 @@ app.patch("/api/prescriptions/:id/dispense", (req, res) => {
   });
 });
 
-// -------------------- PATIENT SEARCH --------------------
+// Patient search
 app.get("/search", (req, res) => {
   const { last_name, first_name, dob, phone } = req.query;
 
@@ -144,42 +142,34 @@ app.get("/search", (req, res) => {
   }
 
   db.query(sql, params, (err, results) => {
-    if (err) {
-      console.error("❌ Search error:", err);
-      return res.status(500).send("<p style='color:red;'>Server error while searching.</p>");
-    }
-
-    if (results.length === 0) {
-      return res.send("<p>No matching patients found.</p>");
-    }
+    if (err) return res.status(500).send("<p style='color:red;'>Server error while searching.</p>");
+    if (results.length === 0) return res.send("<p>No matching patients found.</p>");
 
     const html = results
-      .map((row) => {
-        // Format DOB to YYYY-MM-DD
-        const dobFormatted = row.dob ? row.dob.toISOString().split("T")[0] : "";
-
-        return `
-           <div class="result-item">
-        <button onclick="window.location.href='/doctor.html?patientId=${row.id}&patientName=${encodeURIComponent(row.first_name + ' ' + row.last_name)}'">
-          ${row.first_name} ${row.last_name}
-        </button><br>
-        DOB: ${dobFormatted}<br>
-        Phone: ${row.phone}
-      </div>
-        `;
-      })
+      .map(
+        (row) => `
+          <div class="result-item">
+            <button onclick="window.location.href='/doctor.html?patientId=${row.id}&patientName=${encodeURIComponent(
+          row.first_name + " " + row.last_name
+        )}'">
+              ${row.first_name} ${row.last_name}
+            </button><br>
+            DOB: ${row.dob ? row.dob.toISOString().split("T")[0] : ""}<br>
+            Phone: ${row.phone}
+          </div>
+        `
+      )
       .join("");
 
     res.send(html);
   });
 });
 
+// ------------------- CATCH-ALL FRONTEND -------------------
+// This must come AFTER all API routes
 app.use((req, res) => {
   res.sendFile(path.join(__dirname, "../frontend/index.html"));
 });
 
-
-// Start server
+// ------------------- START SERVER -------------------
 app.listen(PORT, () => console.log(`🚀 Server running at http://localhost:${PORT}`));
-
-

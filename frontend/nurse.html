@@ -1,8 +1,38 @@
 <!doctype html>
 <html>
 <head><meta charset="utf-8"><title>Nurse - EHR Demo</title><link rel="stylesheet" href="css/style.css"></head>
+  <style>
+    /* Simple dropdown for account settings */
+    .dropdown {
+      position: relative;
+      display: inline-block;
+    }
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      right: 0;
+      background-color: #f9f9f9;
+      min-width: 160px;
+      box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+      z-index: 1;
+    }
+    .dropdown-content button {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      background: none;
+      text-align: left;
+      cursor: pointer;
+    }
+    .dropdown-content button:hover {
+      background-color: #f1f1f1;
+    }
+    .dropdown.show .dropdown-content {
+      display: block;
+    }
+  </style>
 <body>
-      <div class="top-bar">
+       <div class="top-bar">
     <button class="icon-button" title="Settings" aria-label="Settings">
       <!-- Gear icon -->
       <svg viewBox="0 0 24 24">
@@ -21,13 +51,18 @@
       </svg>
     </button>
 
-    <button class="icon-button" title="Profile" aria-label="Profile">
-      <!-- User icon -->
-      <svg viewBox="0 0 24 24">
-        <circle cx="12" cy="7" r="4"></circle>
-        <path d="M5.5 21a7.5 7.5 0 0 1 13 0"></path>
-      </svg>
-    </button>
+    <div class="dropdown">
+      <button class="icon-button" id="profileBtn" title="Profile" aria-label="Profile">
+        <!-- User icon -->
+        <svg viewBox="0 0 24 24">
+          <circle cx="12" cy="7" r="4"></circle>
+          <path d="M5.5 21a7.5 7.5 0 0 1 13 0"></path>
+        </svg>
+      </button>
+      <div class="dropdown-content" id="accountDropdown">
+        <button id="signOutBtn">Sign Out</button>
+      </div>
+    </div>
   </div>
   
 <div class="container">
@@ -47,6 +82,24 @@
 
 <script src="js/app.js"></script>
 <script>
+    // Dropdown toggle
+    const profileBtn = document.getElementById('profileBtn');
+    const accountDropdown = document.getElementById('accountDropdown');
+    profileBtn.addEventListener('click', () => {
+      accountDropdown.parentElement.classList.toggle('show');
+    });
+    // Close dropdown if clicking outside
+    window.addEventListener('click', (e) => {
+      if (!profileBtn.contains(e.target) && !accountDropdown.contains(e.target)) {
+        accountDropdown.parentElement.classList.remove('show');
+      }
+    });
+
+    // Sign out button
+    document.getElementById('signOutBtn').addEventListener('click', () => {
+      localStorage.removeItem('user');
+      window.location.href = '/index.html';
+    });
   async function loadPatients(){
     const list = await listPatients();
     const sel = document.getElementById('patientSelect');
